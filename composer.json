@@ -1,0 +1,22 @@
+{
+  "name": "kwarcu/yet-another-budget-app",
+  "type": "project",
+  "authors": [
+    {
+      "name": "Bartlomiej Kwarcinski",
+      "email": "bartek@kwarcu.org"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "YABA\\": "src/"
+    }
+  },
+  "require": {
+
+  },
+  "require-dev": {
+
+  }
+
+}
