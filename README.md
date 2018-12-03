@@ -1,10 +1,10 @@
 # YABA - Yet Another Budgeting App
 
 Just for fun: 
-> phpspec learning.
-> tdd practice.
-> ddd practice.
-> good practices practice.
+> * phpspec learning.
+> * tdd practice.
+> * ddd practice.
+> * good practices practice.
 
 # Setup
 ```
