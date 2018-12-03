@@ -1,9 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace YABA\Domain;
+namespace YABA\Domain\Budget;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use YABA\Domain\Budget\Exception\AddedBillingCycleHasToAdhereToThePreviousOneException;
+use YABA\Domain\Budget\Exception\NoMatchingBillingCycleForGivenTransactionException;
 
 class Budget
 {
@@ -11,18 +12,21 @@ class Budget
     protected $name;
     /** @var ArrayCollection|BillingCycle[] */
     protected $billingCycles;
+    /** @var ArrayCollection|Transaction[] */
+    protected $transactions;
 
     protected function __construct(
         string $name
     ) {
         $this->name = $name;
         $this->billingCycles = new ArrayCollection();
+        $this->transactions = new ArrayCollection();
     }
 
     public static function create(
         string $name
     ): self {
-        $budget = new Budget(
+        $budget = new static(
             $name
         );
 
@@ -60,5 +64,34 @@ class Budget
     public function billingCycles(): array
     {
         return array_values($this->billingCycles->toArray());
+    }
+
+    public function addTransaction(Transaction $transaction): void
+    {
+        $this->transactions->add($transaction);
+
+        $this->findMatchingBillingCycleAndAssignTransaction($transaction);
+    }
+
+    protected function findMatchingBillingCycleAndAssignTransaction(Transaction $transaction): void
+    {
+        /** @var BillingCycle $matchingCycle */
+        $matchingCycle = $this->billingCycles->filter(function (BillingCycle $billingCycle) use ($transaction) {
+            return $billingCycle->matchesTransaction($transaction);
+        })->first();
+
+        if (!$matchingCycle) {
+            throw new NoMatchingBillingCycleForGivenTransactionException();
+        }
+
+        $matchingCycle->assignTransaction($transaction);
+    }
+
+    /**
+     * @return Transaction[]
+     */
+    public function transactions(): array
+    {
+        return array_values($this->transactions->toArray());
     }
 }

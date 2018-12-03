@@ -14,7 +14,9 @@
   },
   "require": {
     "nesbot/carbon": "^2.5",
-    "doctrine/collections": "^1.5"
+    "doctrine/collections": "^1.5",
+    "ramsey/uuid": "^3.8",
+    "moneyphp/money": "^3.1"
   },
   "require-dev": {
     "phpspec/phpspec": "^4.0"

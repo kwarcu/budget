@@ -1,10 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace spec\YABA\Domain;
+namespace spec\YABA\Domain\Budget;
 
 use Carbon\CarbonImmutable;
 use PhpSpec\ObjectBehavior;
 use YABA\Domain\Budget\BillingCycle;
+use YABA\Domain\Budget\Transaction;
 
 class BillingCycleSpec extends ObjectBehavior
 {
@@ -20,7 +21,6 @@ class BillingCycleSpec extends ObjectBehavior
             new CarbonImmutable(self::TEST_START_DATE, new \DateTimeZone('UTC')),
             new CarbonImmutable(self::TEST_END_DATE, new \DateTimeZone('UTC')),
         ]);
-
     }
 
     /**
@@ -59,6 +59,27 @@ class BillingCycleSpec extends ObjectBehavior
 
         $anotherBillingCycle->startDate()->willReturn($this->endDate()->addDays(2)->startOfDay());
         $this->isAdhering($anotherBillingCycle)->shouldEqual(false);
+    }
+
+    public function it_can_determine_if_a_transaction_belongs_to_it(Transaction $transaction): void
+    {
+        $transaction->date()->willReturn($this->startDate()->addDay());
+        $this->matchesTransaction($transaction)->shouldReturn(true);
+
+        $transaction->date()->willReturn($this->endDate()->addDay());
+        $this->matchesTransaction($transaction)->shouldReturn(false);
+    }
+
+    public function it_can_have_a_transaciton_assigned(Transaction $transaction): void
+    {
+        $transaction->date()->willReturn($this->startDate()->addDay());
+
+        $this->assignTransaction($transaction);
+        $this->transactions()->shouldReturn([$transaction]);
+
+        $transaction->date()->willReturn($this->endDate()->addDay());
+        $this->shouldThrow(Transaction\Exception\TransactionDateIsOutsideBillingCycleDateRangeException::class)
+            ->during('assignTransaction', [$transaction]);
     }
 
 }

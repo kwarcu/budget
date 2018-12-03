@@ -1,18 +1,20 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace YABA\Domain;
-
+namespace YABA\Domain\Budget;
 
 use Carbon\CarbonImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
 use YABA\Domain\Budget\Exception\StartDateCanNotBeAfterEndDateException;
+use YABA\Domain\Budget\Transaction\Exception\TransactionDateIsOutsideBillingCycleDateRangeException;
 
 class BillingCycle
 {
     /** @var CarbonImmutable */
     protected $startDate;
-
     /** @var CarbonImmutable */
     protected $endDate;
+    /** @var ArrayCollection|Transaction[] */
+    protected $transactions;
 
     protected function __construct(
         CarbonImmutable $startDate,
@@ -22,6 +24,8 @@ class BillingCycle
 
         $this->startDate = $this->normalizeStartDate($startDate);
         $this->endDate = $this->normalizeEndDate($endDate);
+
+        $this->transactions = new ArrayCollection();
     }
 
     protected function assertStartDateBeforeEndDate(CarbonImmutable $startDate, CarbonImmutable $endDate): void
@@ -45,7 +49,7 @@ class BillingCycle
         CarbonImmutable $startDate,
         CarbonImmutable $endDate
     ): self {
-        $billingCycle = new BillingCycle(
+        $billingCycle = new static(
             $startDate,
             $endDate
         );
@@ -53,7 +57,7 @@ class BillingCycle
         return $billingCycle;
     }
 
-    public function isAdhering(BillingCycle $anotherBillingCycle)
+    public function isAdhering(BillingCycle $anotherBillingCycle): bool
     {
         /** @var CarbonImmutable $adheringStartDate */
         $adheringStartDate = $this->endDate()->addDay()->startOfDay();
@@ -68,5 +72,31 @@ class BillingCycle
     public function startDate(): CarbonImmutable
     {
         return $this->startDate;
+    }
+
+    public function matchesTransaction(Transaction $transaction): bool
+    {
+        return $transaction->date()->isBetween($this->startDate(), $this->endDate());
+    }
+
+    public function assignTransaction(Transaction $transaction): void
+    {
+        $this->assertCycleMatchesTransaction($transaction);
+        $this->transactions->add($transaction);
+    }
+
+    /**
+     * @return Transaction[]
+     */
+    public function transactions(): array
+    {
+        return array_values($this->transactions->toArray());
+    }
+
+    protected function assertCycleMatchesTransaction(Transaction $transaction): void
+    {
+        if (!$this->matchesTransaction($transaction)) {
+            throw new TransactionDateIsOutsideBillingCycleDateRangeException();
+        }
     }
 }
