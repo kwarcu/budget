@@ -42,8 +42,12 @@ class BudgetSpec extends ObjectBehavior
             ->during('addBillingCycle', [$nonAdheringBillingCycle]);
     }
 
-    public function it_can_accept_a_transaction(Transaction $transaction): void
+    public function it_can_accept_a_transaction(BillingCycle $billingCycle, Transaction $transaction): void
     {
+        $billingCycle->matchesTransaction($transaction)->willReturn(true);
+        $billingCycle->assignTransaction($transaction)->shouldBeCalledOnce();
+
+        $this->addBillingCycle($billingCycle);
         $this->addTransaction($transaction);
 
         $this->transactions()->shouldReturn([$transaction]);
@@ -67,8 +71,10 @@ class BudgetSpec extends ObjectBehavior
         $this->addTransaction($transaction);
     }
 
-    public function it_throws_an_exception_if_theres_no_matching_billing_cycle(Transaction $transaction, BillingCycle $otherBillingCycle): void
-    {
+    public function it_throws_an_exception_if_theres_no_matching_billing_cycle(
+        Transaction $transaction,
+        BillingCycle $otherBillingCycle
+    ): void {
         $otherBillingCycle->matchesTransaction($transaction)->willReturn(false);
         $this->shouldThrow(NoMatchingBillingCycleForGivenTransactionException::class)
             ->during('addTransaction', [$transaction]);
